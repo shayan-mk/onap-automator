@@ -18,6 +18,21 @@ KUBE_VERSION_SHORT="1.27"
 KUBE_VERSION_FULL="1.27.5-1.1"
 HELM_VERSION="3.12.3-1"
 
+
+# Based on https://stackoverflow.com/a/53463162/9346339
+cecho(){
+    RED="\033[0;31m"
+    GREEN="\033[0;32m"  # <-- [0 means not bold
+    YELLOW="\033[1;33m" # <-- [1 means bold
+    CYAN="\033[1;36m"
+    # ... Add more colors if you like
+
+    NC="\033[0m" # No Color
+
+    # printf "${(P)1}${2} ${NC}\n" # <-- zsh
+    printf "${!1}${2} ${NC}\n" # <-- bash
+}
+
 run-as-root(){
   if [ "$EUID" -ne 0 ]
   then cecho "RED" "This script must be run as ROOT"
@@ -39,21 +54,6 @@ install-packages() {
   sudo apt-get install -y vim tmux git curl iproute2 iputils-ping iperf3 tcpdump python3-pip
   sudo pip3 install virtualenv
 }
-
-# Based on https://stackoverflow.com/a/53463162/9346339
-cecho(){
-    RED="\033[0;31m"
-    GREEN="\033[0;32m"  # <-- [0 means not bold
-    YELLOW="\033[1;33m" # <-- [1 means bold
-    CYAN="\033[1;36m"
-    # ... Add more colors if you like
-
-    NC="\033[0m" # No Color
-
-    # printf "${(P)1}${2} ${NC}\n" # <-- zsh
-    printf "${!1}${2} ${NC}\n" # <-- bash
-}
-
 
 # Disable Swap
 disable-swap() {

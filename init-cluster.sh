@@ -12,6 +12,37 @@
 # Date: 14/03/2024
 # Reason: Separate files for starting a cluster and installing prereq software (k8s, docker, helm, ...)
 
+
+# Based on https://stackoverflow.com/a/53463162/9346339
+cecho(){
+    RED="\033[0;31m"
+    GREEN="\033[0;32m"  # <-- [0 means not bold
+    YELLOW="\033[1;33m" # <-- [1 means bold
+    CYAN="\033[1;36m"
+    # ... Add more colors if you like
+
+    NC="\033[0m" # No Color
+
+    # printf "${(P)1}${2} ${NC}\n" # <-- zsh
+    printf "${!1}${2} ${NC}\n" # <-- bash
+}
+
+run-as-root(){
+  if [ "$EUID" -ne 0 ]
+  then cecho "RED" "This script must be run as ROOT"
+  exit
+  fi
+}
+
+timer-sec(){
+  secs=$((${1}))
+  while [ $secs -gt 0 ]; do
+    echo -ne "Waiting for $secs\033[0K seconds ...\r"
+    sleep 1
+    : $((secs--))
+  done
+}
+
 create-k8s-cluster() {
   if [ -f "/etc/kubernetes/admin.conf" ]; then
     cecho "YELLOW" "A Kubernetes cluster already exists. Skipping cluster creation."
@@ -104,9 +135,9 @@ setup-ovs-cni() {
 
 }
 
-# ./install.sh
+# ./install-reqs.sh
 create-k8s-cluster
-install-cni
-install-multus
-install-openebs
-setup-ovs-cni
+#install-cni
+#install-multus
+#install-openebs
+#setup-ovs-cni
