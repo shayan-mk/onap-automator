@@ -137,7 +137,7 @@ setup-ovs-cni() {
 
 # ./install-reqs.sh
 create-k8s-cluster
-#install-cni
-#install-multus
-#install-openebs
-#setup-ovs-cni
+install-cni
+install-multus
+install-openebs
+setup-ovs-cni
