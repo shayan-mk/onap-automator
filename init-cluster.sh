@@ -17,7 +17,7 @@ create-k8s-cluster() {
     cecho "YELLOW" "A Kubernetes cluster already exists. Skipping cluster creation."
   else
     cecho "GREEN" "Creating k8s cluster ..."
-    sudo kubeadm init --config kubeadm-config.yaml
+    sudo kubeadm init --config config-kubeadm.yaml
 
     # Setup kubectl without sudo
     mkdir -p ${HOME}/.kube
