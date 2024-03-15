@@ -112,8 +112,9 @@ uninstall_cni() {
 
 uninstall_helm() {
     cecho "RED" "Removing Helm3"
+    sudo apt-mark unhold helm
     if [ -x "$(command -v helm)" ]; then
-        sudo apt-get remove --purge -y helm
+        sudo apt-get remove --purge -y --allow-change-held-packages helm
         cecho "GREEN" "Helm3 has been removed."
     else
         cecho "YELLOW" "Helm3 is not installed"

@@ -177,6 +177,7 @@ install-helm() {
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
     sudo apt-get update
     sudo apt-get install helm=${HELM_VERSION}
+    sudo apt-mark hold helm
   else
     cecho "YELLOW" "Helm 3 is already installed."
   fi
