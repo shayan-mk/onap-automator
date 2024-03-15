@@ -42,8 +42,10 @@ cecho(){
 
 uninstall_docker() {
   cecho "RED" "Uninstalling docker ..."
+  sudo apt-mark unhold docker-ce docker-ce-cli
   if [ -x "$(command -v docker)" ]; then
     sudo docker image prune -a
+    sudo docker system prune -a
     sudo systemctl restart docker
     sudo apt purge -y docker-engine docker docker.io docker-ce docker-ce-cli containerd containerd.io runc --allow-change-held-packages
   else
@@ -53,9 +55,10 @@ uninstall_docker() {
 
 uninstall_containerd() {
   cecho "RED" "Uninstalling containerd ..."
+  sudo apt-mark unhold docker-ce docker-ce-cli
   if [ -x "$(command -v containerd)" ]; then
     sudo systemctl stop containerd
-    sudo apt-get remove --purge -y containerd.io docker-ce docker-ce-cli
+    sudo apt-get remove --purge -y containerd.io docker-ce docker-ce-cli --allow-change-held-packages
     sudo rm -rf /etc/containerd
     cecho "GREEN" "Containerd and related packages have been uninstalled."
   else
@@ -66,8 +69,9 @@ uninstall_containerd() {
 
 uninstall_k8s() {
   cecho "RED" "Uninstalling Kubernetes components (kubectl, kubeadm, kubelet)..."
+  sudo apt-mark unhold kubelet kubeadm kubectl
   if [ -x "$(command -v kubectl)" ] && [ -x "$(command -v kubeadm)" ] && [ -x "$(command -v kubelet)" ]; then
-    sudo apt-get remove --purge -y --allow-change-held-packages kubeadm kubectl kubelet kubernetes-cni kube* 
+    sudo apt-get remove --purge -y --allow-change-held-packages kubelet kubeadm kubectl kubernetes-cni kube* 
     cecho "GREEN" "Kubernetes components have been deleted."
   else
     cecho "YELLOW" "Kubernetes components (kubectl, kubeadm, kubelet) are not installed."
@@ -168,10 +172,10 @@ cleanup() {
 
 remove_ovs_cni
 uninstall_openebs
-uninstall_helm
 uninstall_multus
 uninstall_cni
 reset_k8s_cluster
+uninstall_helm
 uninstall_k8s
 uninstall_containerd
 uninstall_docker
