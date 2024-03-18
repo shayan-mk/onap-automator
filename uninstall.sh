@@ -176,10 +176,10 @@ uninstall_openebs
 uninstall_multus
 uninstall_cni
 reset_k8s_cluster
-uninstall_helm
-uninstall_k8s
-uninstall_containerd
-uninstall_docker
+#uninstall_helm
+#uninstall_k8s
+#uninstall_containerd
+#uninstall_docker
 cleanup
 
 cecho "GREEN" "Uninstallation completed."

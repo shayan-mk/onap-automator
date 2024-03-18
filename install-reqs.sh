@@ -109,6 +109,10 @@ install-containerd() {
           sudo systemctl restart containerd
   fi
 
+  sudo groupadd docker
+  sudo usermod -aG docker $USER
+  newgrp docker
+
   # Check if Containerd is running
   if sudo systemctl is-active containerd &> /dev/null; then
     cecho "GREEN" "Containerd is running :)"
