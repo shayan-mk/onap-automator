@@ -114,10 +114,9 @@ resolve_deploy_flags() {
 
 check_for_dep() {
     # skip if dry-run mode is enabled
-    if [ "$DRY_RUN" = "true" ]; then
         echo "DRY-RUN: skipping deployment check for $1"
         return
-    fi
+
     try=0
     retries=60
     until (kubectl get deployment -n $HELM_NAMESPACE | grep -P "\b$1\b") >/dev/null 2>&1; do
@@ -143,8 +142,8 @@ deploy_subchart() {
         LOG_FILE=$LOG_DIR/"${RELEASE}-${subchart}".log
         :> $LOG_FILE
 
-        safe_exec helm upgrade -i "${RELEASE}-${subchart}" $CACHE_SUBCHART_DIR/$subchart \
-         $DEPLOY_FLAGS -f $GLOBAL_OVERRIDES -f $SUBCHART_OVERRIDES \
+        helm upgrade -i "${RELEASE}-${subchart}" $CACHE_SUBCHART_DIR/$subchart \
+         $DEPLOY_FLAGS -f $GLOBAL_OVERRIDES -f $SUBCHART_OVERRIDES --dry-run --debug \
          > $LOG_FILE 2>&1
 
         if [ "$VERBOSE" = "true" ]; then
@@ -155,7 +154,7 @@ deploy_subchart() {
         # Add annotation last-applied-configuration if set-last-applied flag is set
         if [ "$SET_LAST_APPLIED" = "true" ]; then
           helm get manifest "${RELEASE}-${subchart}" \
-          | safe_exec kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
+          | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - --dry-run=client \
           > $LOG_FILE.log 2>&1
         fi
       fi
@@ -270,7 +269,7 @@ deploy() {
 
   # compute overrides for parent and all subcharts
   COMPUTED_OVERRIDES=$CACHE_DIR/$CHART_NAME/computed-overrides.yaml
-  safe_exec helm upgrade -i $RELEASE $CHART_DIR $FLAGS --dry-run --debug \
+  helm upgrade -i $RELEASE $CHART_DIR $FLAGS --dry-run --debug \
    | sed -n '/COMPUTED VALUES:/,/HOOKS:/p' | sed '1d;$d' > $COMPUTED_OVERRIDES
 
   # extract global overrides to apply to parent and all subcharts
@@ -282,7 +281,7 @@ deploy() {
     LOG_FILE=$LOG_DIR/${RELEASE}.log
     :> $LOG_FILE
 
-    safe_exec helm upgrade -i $RELEASE $CHART_DIR $DEPLOY_FLAGS -f $COMPUTED_OVERRIDES \
+    helm upgrade -i $RELEASE $CHART_DIR $DEPLOY_FLAGS -f $COMPUTED_OVERRIDES --dry-run --debug \
      > $LOG_FILE.log 2>&1
 
     if [ "$VERBOSE" = "true" ]; then
@@ -293,7 +292,7 @@ deploy() {
     # Add annotation last-applied-configuration if set-last-applied flag is set
     if [ "$SET_LAST_APPLIED" = "true" ]; then
       helm get manifest ${RELEASE} \
-      | safe_exec kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
+      | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - --dry-run=client \
       > $LOG_FILE.log 2>&1
     fi
   fi
@@ -325,7 +324,7 @@ deploy() {
         done
         for item in $reverse_list
         do
-          safe_exec helm del $item
+          echo "helm del $item"
         done
       fi
     done
@@ -352,7 +351,7 @@ deploy() {
         done
         for item in $reverse_list
         do
-          safe_exec helm del $item
+          echo "helm del $item"
         done
       fi
     done
