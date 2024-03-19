@@ -40,8 +40,30 @@ Flags:
   -f, --values valueFiles        specify values in a YAML file or a URL(can specify multiple) (default [])
       --verbose                  enables full helm install/upgrade output during deploy
       --set-last-applied         set the last-applied-configuration annotation on all objects.This annotation is required to restore services using Ark/Veloro backup restore.
+      --dry-run                  simulate an install/upgrade
 EOF
 }
+
+safe_exec() {
+  if [ "$DRY_RUN" = true ]; then
+    # Check for Helm commands that are safe to execute under dry-run mode.
+    if [[ "$1" == helm* ]] && ([[ "$2" == upgrade* ]] || [[ "$2" == install* ]]); then
+      echo "DRY-RUN: $@ --dry-run --debug"
+      $@ --dry-run --debug
+    elif [[ "$1" == kubectl* ]]; then
+      # Handle kubectl commands for dry-run mode.
+      echo "DRY-RUN: $@ --dry-run=client"
+      $@ --dry-run=client
+    else
+      # For non-Helm, non-kubectl commands in dry-run mode, just print what would be executed.
+      echo "DRY-RUN: $@"
+    fi
+  else
+    # Execute the command normally if not in dry-run mode.
+    $@
+  fi
+}
+
 
 generate_overrides() {
   SUBCHART_NAMES=($(cat $COMPUTED_OVERRIDES | grep -v '^\s\s'))
@@ -91,6 +113,11 @@ resolve_deploy_flags() {
 
 
 check_for_dep() {
+    # skip if dry-run mode is enabled
+    if [ "$DRY_RUN" = "true" ]; then
+        echo "DRY-RUN: skipping deployment check for $1"
+        return
+    fi
     try=0
     retries=60
     until (kubectl get deployment -n $HELM_NAMESPACE | grep -P "\b$1\b") >/dev/null 2>&1; do
@@ -116,7 +143,7 @@ deploy_subchart() {
         LOG_FILE=$LOG_DIR/"${RELEASE}-${subchart}".log
         :> $LOG_FILE
 
-        helm upgrade -i "${RELEASE}-${subchart}" $CACHE_SUBCHART_DIR/$subchart \
+        safe_exec helm upgrade -i "${RELEASE}-${subchart}" $CACHE_SUBCHART_DIR/$subchart \
          $DEPLOY_FLAGS -f $GLOBAL_OVERRIDES -f $SUBCHART_OVERRIDES \
          > $LOG_FILE 2>&1
 
@@ -128,7 +155,7 @@ deploy_subchart() {
         # Add annotation last-applied-configuration if set-last-applied flag is set
         if [ "$SET_LAST_APPLIED" = "true" ]; then
           helm get manifest "${RELEASE}-${subchart}" \
-          | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
+          | safe_exec kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
           > $LOG_FILE.log 2>&1
         fi
       fi
@@ -157,6 +184,12 @@ deploy() {
   CACHE_SUBCHART_DIR=$CHART_DIR-subcharts
   LOG_DIR=$CHART_DIR/logs
 
+  # determine if dry-run mode is enabled
+  DRY_RUN="false"
+  if expr "$FLAGS" : ".*--dry-run.*" ; then
+    FLAGS="$(echo $FLAGS| sed -n 's/--dry-run//p')"
+    DRY_RUN="true"
+  fi
   # determine if verbose output is enabled
   VERBOSE="false"
   if expr "$FLAGS" : ".*--verbose.*" ; then
@@ -237,7 +270,7 @@ deploy() {
 
   # compute overrides for parent and all subcharts
   COMPUTED_OVERRIDES=$CACHE_DIR/$CHART_NAME/computed-overrides.yaml
-  helm upgrade -i $RELEASE $CHART_DIR $FLAGS --dry-run --debug \
+  safe_exec helm upgrade -i $RELEASE $CHART_DIR $FLAGS --dry-run --debug \
    | sed -n '/COMPUTED VALUES:/,/HOOKS:/p' | sed '1d;$d' > $COMPUTED_OVERRIDES
 
   # extract global overrides to apply to parent and all subcharts
@@ -249,7 +282,7 @@ deploy() {
     LOG_FILE=$LOG_DIR/${RELEASE}.log
     :> $LOG_FILE
 
-    helm upgrade -i $RELEASE $CHART_DIR $DEPLOY_FLAGS -f $COMPUTED_OVERRIDES \
+    safe_exec helm upgrade -i $RELEASE $CHART_DIR $DEPLOY_FLAGS -f $COMPUTED_OVERRIDES \
      > $LOG_FILE.log 2>&1
 
     if [ "$VERBOSE" = "true" ]; then
@@ -260,7 +293,7 @@ deploy() {
     # Add annotation last-applied-configuration if set-last-applied flag is set
     if [ "$SET_LAST_APPLIED" = "true" ]; then
       helm get manifest ${RELEASE} \
-      | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
+      | safe_exec kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
       > $LOG_FILE.log 2>&1
     fi
   fi
@@ -292,7 +325,7 @@ deploy() {
         done
         for item in $reverse_list
         do
-          helm del $item
+          safe_exec helm del $item
         done
       fi
     done
@@ -319,7 +352,7 @@ deploy() {
         done
         for item in $reverse_list
         do
-          helm del $item
+          safe_exec helm del $item
         done
       fi
     done
@@ -346,3 +379,4 @@ case "${1:-"help"}" in
 esac
 
 exit 0
+
