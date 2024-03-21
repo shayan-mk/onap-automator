@@ -44,25 +44,25 @@ Flags:
 EOF
 }
 
-safe_exec() {
-  if [ "$DRY_RUN" = true ]; then
-    # Check for Helm commands that are safe to execute under dry-run mode.
-    if [[ "$1" == helm* ]] && ([[ "$2" == upgrade* ]] || [[ "$2" == install* ]]); then
-      echo "DRY-RUN: $@ --dry-run --debug"
-      $@ --dry-run --debug
-    elif [[ "$1" == kubectl* ]]; then
-      # Handle kubectl commands for dry-run mode.
-      echo "DRY-RUN: $@ --dry-run=client"
-      $@ --dry-run=client
-    else
-      # For non-Helm, non-kubectl commands in dry-run mode, just print what would be executed.
-      echo "DRY-RUN: $@"
-    fi
-  else
-    # Execute the command normally if not in dry-run mode.
-    $@
-  fi
-}
+# safe_exec() {
+#   if [ "$DRY_RUN" = true ]; then
+#     # Check for Helm commands that are safe to execute under dry-run mode.
+#     if [[ "$1" == helm* ]] && ([[ "$2" == upgrade* ]] || [[ "$2" == install* ]]); then
+#       echo "DRY-RUN: $@ --dry-run --debug"
+#       $@ --dry-run --debug
+#     elif [[ "$1" == kubectl* ]]; then
+#       # Handle kubectl commands for dry-run mode.
+#       echo "DRY-RUN: $@ --dry-run=client"
+#       $@ --dry-run=client
+#     else
+#       # For non-Helm, non-kubectl commands in dry-run mode, just print what would be executed.
+#       echo "DRY-RUN: $@"
+#     fi
+#   else
+#     # Execute the command normally if not in dry-run mode.
+#     $@
+#   fi
+# }
 
 
 generate_overrides() {
@@ -114,8 +114,8 @@ resolve_deploy_flags() {
 
 check_for_dep() {
     # skip if dry-run mode is enabled
-        echo "DRY-RUN: skipping deployment check for $1"
-        return
+    echo "DRY-RUN: skipping deployment check for $1"
+    return
 
     try=0
     retries=60
@@ -146,16 +146,17 @@ deploy_subchart() {
          $DEPLOY_FLAGS -f $GLOBAL_OVERRIDES -f $SUBCHART_OVERRIDES --dry-run --debug \
          > $LOG_FILE 2>&1
 
-        if [ "$VERBOSE" = "true" ]; then
-          cat $LOG_FILE
-        else
-          echo "release \"${RELEASE}-${subchart}\" deployed"
-        fi
         # Add annotation last-applied-configuration if set-last-applied flag is set
         if [ "$SET_LAST_APPLIED" = "true" ]; then
           helm get manifest "${RELEASE}-${subchart}" \
           | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - --dry-run=client \
-          > $LOG_FILE.log 2>&1
+          > $LOG_FILE 2>&1
+        fi
+
+        if [ "$VERBOSE" = "true" ]; then
+          cat $LOG_FILE
+        else
+          echo "release \"${RELEASE}-${subchart}\" deployed"
         fi
       fi
       if [ "$DELAY" = "true" ]; then
@@ -282,20 +283,21 @@ deploy() {
     :> $LOG_FILE
 
     helm upgrade -i $RELEASE $CHART_DIR $DEPLOY_FLAGS -f $COMPUTED_OVERRIDES --dry-run --debug \
-     > $LOG_FILE.log 2>&1
+     > $LOG_FILE 2>&1
 
-    if [ "$VERBOSE" = "true" ]; then
-      cat $LOG_FILE
-    else
-      echo "release \"$RELEASE\" deployed"
-    fi
     # Add annotation last-applied-configuration if set-last-applied flag is set
     if [ "$SET_LAST_APPLIED" = "true" ]; then
       helm get manifest ${RELEASE} \
       | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - --dry-run=client \
-      > $LOG_FILE.log 2>&1
+      > $LOG_FILE 2>&1
     fi
   fi
+
+  if [ "$VERBOSE" = "true" ]; then
+      cat $LOG_FILE
+    else
+      echo "release \"$RELEASE\" deployed"
+    fi
 
   # upgrade/install each "enabled" subchart
   cd $CACHE_SUBCHART_DIR/
