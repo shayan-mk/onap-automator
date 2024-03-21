@@ -129,7 +129,7 @@ deploy_subchart() {
         if [ "$SET_LAST_APPLIED" = "true" ]; then
           echo "helm get manifest "${RELEASE}-${subchart}" \
           | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
-          > $LOG_FILE.log 2>&1"
+          > $LOG_FILE 2>&1"
         fi
       fi
       if [ "$DELAY" = "true" ]; then
@@ -250,7 +250,7 @@ deploy() {
     :> $LOG_FILE
 
     echo "helm upgrade -i $RELEASE $CHART_DIR $DEPLOY_FLAGS -f $COMPUTED_OVERRIDES \
-     > $LOG_FILE.log 2>&1"
+     > $LOG_FILE 2>&1"
 
     if [ "$VERBOSE" = "true" ]; then
       cat $LOG_FILE
@@ -261,7 +261,7 @@ deploy() {
     if [ "$SET_LAST_APPLIED" = "true" ]; then
       echo "helm get manifest ${RELEASE} \
       | kubectl apply set-last-applied --create-annotation -n $HELM_NAMESPACE -f - \
-      > $LOG_FILE.log 2>&1"
+      > $LOG_FILE 2>&1"
     fi
   fi
 
