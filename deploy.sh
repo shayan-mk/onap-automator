@@ -107,8 +107,8 @@ deploy_strimzi() {
   #Deploy the srtimzi-kafka chart in advance. Dependent charts require the entity-operator
   #for management of the strimzi crds
   deploy_subchart
-  echo "waiting for ${RELEASE}-strimzi-entity-operator to be deployed"
-  check_for_dep ${RELEASE}-strimzi-entity-operator
+  # echo "waiting for ${RELEASE}-strimzi-entity-operator to be deployed"
+  # check_for_dep ${RELEASE}-strimzi-entity-operator
 }
 
 deploy_subchart() {
