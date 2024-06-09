@@ -97,8 +97,11 @@ install-containerd() {
             "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
             "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
             sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-          sudo apt-get update
+	  
+	  # remove all the conflicting legacy packages
+	  for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+          
+	  sudo apt-get update
           sudo apt-get install -y \
 		  docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io docker-buildx-plugin docker-compose-plugin
 	  sudo apt-mark hold docker-ce docker-ce-cli
@@ -107,9 +110,12 @@ install-containerd() {
           sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
           sudo systemctl enable containerd
           sudo systemctl restart containerd
+	  sudo systemctl restart docker
   fi
 
-  sudo groupadd docker
+  if ! getent group docker > /dev/null 2>&1; then
+    sudo groupadd docker
+  fi
   sudo usermod -aG docker $USER
   newgrp docker
 

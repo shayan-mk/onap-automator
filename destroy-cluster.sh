@@ -1,10 +1,9 @@
 #!/bin/bash
 #
-# Description: This script is designed to uninstall the 5G testbed at UWaterloo
-# deployed using install.sh
-# Author: Niloy Saha
-# Date: 27/1/2024
-# Version: 1.0
+# Description: This script cleans up the k8s cluster deployed using init-cluster.sh
+# Author: Niloy Saha 			(version 1.0)
+# 	  Shayan Mohammadi Kubijari	(version 1.1)
+# Last Mod Date: 2024/06/08
 # Usage: Please ensure that you run this script as ROOT or with ROOT permissions.
 # Notes: This script is designed for use with Ubuntu 22.04.
 # ==============================================================================
@@ -39,46 +38,6 @@ cecho(){
     printf "${!1}${2} ${NC}\n" # <-- bash
 }
 
-
-uninstall_docker() {
-  cecho "RED" "Uninstalling docker ..."
-  sudo apt-mark unhold docker-ce docker-ce-cli
-  if [ -x "$(command -v docker)" ]; then
-    sudo docker image prune -a
-    sudo docker system prune -a
-    sudo systemctl restart docker
-    sudo apt purge -y docker-engine docker docker.io docker-ce docker-ce-cli containerd containerd.io runc --allow-change-held-packages
-  else
-    cecho "YELLOW" "Docker is not installed."
-  fi
-}
-
-uninstall_containerd() {
-  cecho "RED" "Uninstalling containerd ..."
-  sudo apt-mark unhold docker-ce docker-ce-cli
-  if [ -x "$(command -v containerd)" ]; then
-    sudo systemctl stop containerd
-    sudo apt-get remove --purge -y containerd.io docker-ce docker-ce-cli --allow-change-held-packages
-    sudo rm -rf /etc/containerd
-    cecho "GREEN" "Containerd and related packages have been uninstalled."
-  else
-    cecho "YELLOW" "Containerd is not installed."
-  fi
-}
-
-
-uninstall_k8s() {
-  cecho "RED" "Uninstalling Kubernetes components (kubectl, kubeadm, kubelet)..."
-  sudo apt-mark unhold kubelet kubeadm kubectl
-  if [ -x "$(command -v kubectl)" ] && [ -x "$(command -v kubeadm)" ] && [ -x "$(command -v kubelet)" ]; then
-    sudo apt-get remove --purge -y --allow-change-held-packages kubelet kubeadm kubectl kubernetes-cni kube* 
-    cecho "GREEN" "Kubernetes components have been deleted."
-  else
-    cecho "YELLOW" "Kubernetes components (kubectl, kubeadm, kubelet) are not installed."
-  fi
-
-}
-
 reset_k8s_cluster(){
   cecho "RED" "Deleting Kubernetes cluster..."
   if [ -f "/etc/kubernetes/admin.conf" ]; then
@@ -88,17 +47,13 @@ reset_k8s_cluster(){
     cecho "YELLOW" "Kubernetes cluster is not running."
   fi
 
-  sudo rm -rf /etc/kubernetes
-  sudo rm -rf ${HOME}/.kube
-  sudo rm -rf /var/lib/kubelet/
-  sudo rm -rf /var/lib/etcd
-  sudo rm -rf 
-  sudo rm -rf /etc/cni /etc/kubernetes /var/lib/dockershim /var/lib/etcd /var/lib/kubelet /var/lib/etcd2/ /var/run/kubernetes 
-  sudo rm -rf /var/lib/docker /etc/docker /var/run/docker.sock
+  sudo rm -rf ${HOME}/.kube /etc/kubernetes /var/lib/kubelt /var/run/kubernetes
+  sudo rm -rf /var/lib/etcd /var/lib/etcd2 
+  sudo rm -rf /var/lib/dockershim /var/lib/docker /etc/docker /var/run/docker.sock
   sudo rm -f /etc/apparmor.d/docker /etc/systemd/system/etcd* 
 }
 
-uninstall_cni() {
+uninstall_flannel() {
   cecho "RED" "Uninstalling Flannel CNI ..."
   if kubectl get pods -n kube-flannel -l app=flannel | grep -q '1/1'; then
     kubectl delete -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
@@ -108,17 +63,6 @@ uninstall_cni() {
   fi
   cecho "RED" "Removing CNI configuration files ..."
   sudo rm -rf /etc/cni
-}
-
-uninstall_helm() {
-    cecho "RED" "Removing Helm3"
-    sudo apt-mark unhold helm
-    if [ -x "$(command -v helm)" ]; then
-        sudo apt-get remove --purge -y --allow-change-held-packages helm
-        cecho "GREEN" "Helm3 has been removed."
-    else
-        cecho "YELLOW" "Helm3 is not installed"
-    fi
 }
 
 uninstall_openebs() {
@@ -132,6 +76,17 @@ uninstall_openebs() {
   fi
 
   cecho "GREEN" "OpenEBS has been uninstalled."
+}
+
+uninstall_multus() {
+  cecho "RED" "Uninstalling multus ..."
+  if kubectl get pods -n kube-system -l app=multus | grep -q '1/1'; then
+    cd build/multus-cni
+    cat ./deployments/multus-daemonset-thick.yml | kubectl delete -f -
+    cecho "GREEN" "Uninstalled multus."
+  else
+    cecho "YELLOW" "Multus is not installed."
+  fi
 }
 
 remove_ovs_cni() {
@@ -154,17 +109,6 @@ remove_ovs_cni() {
   fi
 }
 
-uninstall_multus() {
-  cecho "RED" "Uninstalling multus ..."
-  if kubectl get pods -n kube-system -l app=multus | grep -q '1/1'; then
-    cd build/multus-cni
-    cat ./deployments/multus-daemonset-thick.yml | kubectl delete -f -
-    cecho "GREEN" "Uninstalled multus."
-  else
-    cecho "YELLOW" "Multus is not installed."
-  fi
-}
-
 cleanup() {
   cecho "RED" "Cleaning up build directories and redundant packages ..."
   sudo rm -rf build
@@ -174,12 +118,8 @@ cleanup() {
 remove_ovs_cni
 uninstall_openebs
 uninstall_multus
-uninstall_cni
+uninstall_flannel
 reset_k8s_cluster
-# uninstall_helm
-# uninstall_k8s
-# uninstall_containerd
-# uninstall_docker
 cleanup
 
 cecho "GREEN" "Uninstallation completed."
