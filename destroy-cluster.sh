@@ -8,14 +8,14 @@
 # Notes: This script is designed for use with Ubuntu 22.04.
 # ==============================================================================
 
-run-as-root(){
-  if [ "$EUID" -ne 0 ]
-  then cecho "RED" "This script must be run as ROOT"
-  exit
+run-as-root() {
+  if [ "$EUID" -ne 0 ]; then
+    cecho "RED" "This script must be run as ROOT"
+    exit
   fi
 }
 
-timer-sec(){
+timer-sec() {
   secs=$((${1}))
   while [ $secs -gt 0 ]; do
     echo -ne "Waiting for $secs\033[0K seconds ...\r"
@@ -25,20 +25,20 @@ timer-sec(){
 }
 
 # Based on https://stackoverflow.com/a/53463162/9346339
-cecho(){
-    RED="\033[0;31m"
-    GREEN="\033[0;32m"  # <-- [0 means not bold
-    YELLOW="\033[1;33m" # <-- [1 means bold
-    CYAN="\033[1;36m"
-    # ... Add more colors if you like
+cecho() {
+  RED="\033[0;31m"
+  GREEN="\033[0;32m"  # <-- [0 means not bold
+  YELLOW="\033[1;33m" # <-- [1 means bold
+  CYAN="\033[1;36m"
+  # ... Add more colors if you like
 
-    NC="\033[0m" # No Color
+  NC="\033[0m" # No Color
 
-    # printf "${(P)1}${2} ${NC}\n" # <-- zsh
-    printf "${!1}${2} ${NC}\n" # <-- bash
+  # printf "${(P)1}${2} ${NC}\n" # <-- zsh
+  printf "${!1}${2} ${NC}\n" # <-- bash
 }
 
-reset_k8s_cluster(){
+reset_k8s_cluster() {
   cecho "RED" "Deleting Kubernetes cluster..."
   if [ -f "/etc/kubernetes/admin.conf" ]; then
     sudo kubeadm reset -f -q
@@ -48,9 +48,9 @@ reset_k8s_cluster(){
   fi
 
   sudo rm -rf ${HOME}/.kube /etc/kubernetes /var/lib/kubelt /var/run/kubernetes
-  sudo rm -rf /var/lib/etcd /var/lib/etcd2 
+  sudo rm -rf /var/lib/etcd /var/lib/etcd2
   sudo rm -rf /var/lib/dockershim /var/lib/docker /etc/docker /var/run/docker.sock
-  sudo rm -f /etc/apparmor.d/docker /etc/systemd/system/etcd* 
+  sudo rm -f /etc/apparmor.d/docker /etc/systemd/system/etcd*
 }
 
 uninstall_flannel() {
@@ -58,7 +58,7 @@ uninstall_flannel() {
   if kubectl get pods -n kube-flannel -l app=flannel | grep -q '1/1'; then
     kubectl delete -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
     cecho "GREEN" "Uninstalled Flannel CNI."
-  else 
+  else
     cecho "YELLOW" "Flannel CNI is not installed."
   fi
   cecho "RED" "Removing CNI configuration files ..."

@@ -18,29 +18,28 @@ KUBE_VERSION_SHORT="1.27"
 KUBE_VERSION_FULL="1.27.5-1.1"
 HELM_VERSION="3.12.3-1"
 
-
 # Based on https://stackoverflow.com/a/53463162/9346339
-cecho(){
-    RED="\033[0;31m"
-    GREEN="\033[0;32m"  # <-- [0 means not bold
-    YELLOW="\033[1;33m" # <-- [1 means bold
-    CYAN="\033[1;36m"
-    # ... Add more colors if you like
+cecho() {
+  RED="\033[0;31m"
+  GREEN="\033[0;32m"  # <-- [0 means not bold
+  YELLOW="\033[1;33m" # <-- [1 means bold
+  CYAN="\033[1;36m"
+  # ... Add more colors if you like
 
-    NC="\033[0m" # No Color
+  NC="\033[0m" # No Color
 
-    # printf "${(P)1}${2} ${NC}\n" # <-- zsh
-    printf "${!1}${2} ${NC}\n" # <-- bash
+  # printf "${(P)1}${2} ${NC}\n" # <-- zsh
+  printf "${!1}${2} ${NC}\n" # <-- bash
 }
 
-run-as-root(){
-  if [ "$EUID" -ne 0 ]
-  then cecho "RED" "This script must be run as ROOT"
-  exit
+run-as-root() {
+  if [ "$EUID" -ne 0 ]; then
+    cecho "RED" "This script must be run as ROOT"
+    exit
   fi
 }
 
-timer-sec(){
+timer-sec() {
   secs=$((${1}))
   while [ $secs -gt 0 ]; do
     echo -ne "Waiting for $secs\033[0K seconds ...\r"
@@ -57,18 +56,18 @@ install-packages() {
 
 # Disable Swap
 disable-swap() {
-    cecho "GREEN" "Disabling swap ..."
-    if [ -n "$(swapon -s)" ]; then
-        # Swap is enabled, disable it
-        sudo swapoff -a
+  cecho "GREEN" "Disabling swap ..."
+  if [ -n "$(swapon -s)" ]; then
+    # Swap is enabled, disable it
+    sudo swapoff -a
 
-        # Comment out the swap entry in /etc/fstab to disable it permanently
-        sudo sed -i '/swap/ s/^/#/' /etc/fstab
+    # Comment out the swap entry in /etc/fstab to disable it permanently
+    sudo sed -i '/swap/ s/^/#/' /etc/fstab
 
-        echo "Swap has been disabled and commented out in /etc/fstab."
-    else
-        echo "Swap is not enabled on this system."
-    fi
+    echo "Swap has been disabled and commented out in /etc/fstab."
+  else
+    echo "Swap is not enabled on this system."
+  fi
 }
 
 disable-firewall() {
@@ -80,47 +79,45 @@ disable-firewall() {
 # Based on https://docs.docker.com/engine/install/ubuntu/
 # Fixme: If containerd is not running with proper settings, it just checks if containerd is there and exits.
 install-containerd() {
-  if [ -x "$(command -v containerd)" ]
-  then
-          cecho "YELLOW" "Containerd is already installed."
+  if [ -x "$(command -v containerd)" ]; then
+    cecho "YELLOW" "Containerd is already installed."
   else
-          cecho "GREEN" "Installing containerd ..."
-          # Add Docker's official GPG key:
-          sudo apt-get update
-          sudo apt-get install -y ca-certificates curl gnupg
-          sudo install -m 0755 -d /etc/apt/keyrings
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-          sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    cecho "GREEN" "Installing containerd ..."
+    # Add Docker's official GPG key:
+    sudo apt-get update
+    sudo apt-get install -y ca-certificates curl gnupg
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-          # Add the repository to Apt sources:
-          echo \
-            "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-            "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-	  
-	  # remove all the conflicting legacy packages
-	  for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
-          
-	  sudo apt-get update
-          sudo apt-get install -y \
-		  docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io docker-buildx-plugin docker-compose-plugin
-	  sudo apt-mark hold docker-ce docker-ce-cli
-          sudo mkdir -p /etc/containerd
-          sudo bash -c 'containerd config default > /etc/containerd/config.toml'
-          sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-          sudo systemctl enable containerd
-          sudo systemctl restart containerd
-	  sudo systemctl restart docker
+    # Add the repository to Apt sources:
+    echo \
+      "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+            "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" |
+      sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+
+    # remove all the conflicting legacy packages
+    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+
+    sudo apt-get update
+    sudo apt-get install -y \
+      docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io docker-buildx-plugin docker-compose-plugin
+    sudo apt-mark hold docker-ce docker-ce-cli
+    sudo mkdir -p /etc/containerd
+    sudo bash -c 'containerd config default > /etc/containerd/config.toml'
+    sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+    sudo systemctl enable containerd
+    sudo systemctl restart containerd
+    sudo systemctl restart docker
   fi
 
-  if ! getent group docker > /dev/null 2>&1; then
+  if ! getent group docker >/dev/null 2>&1; then
     sudo groupadd docker
   fi
   sudo usermod -aG docker $USER
-  newgrp docker
 
   # Check if Containerd is running
-  if sudo systemctl is-active containerd &> /dev/null; then
+  if sudo systemctl is-active containerd &>/dev/null; then
     cecho "GREEN" "Containerd is running :)"
   else
     cecho "RED" "Containerd installation failed or is not running!"
@@ -148,7 +145,7 @@ net.ipv4.ip_forward = 1
 EOF
 
   # Apply sysctl parameters without reboot
-  sudo sysctl --system > /dev/null
+  sudo sysctl --system >/dev/null
 
 }
 
@@ -163,8 +160,8 @@ install-k8s() {
     sudo apt-get install -y apt-transport-https ca-certificates curl gpg
     curl -fsSL https://pkgs.k8s.io/core:/stable:/v${KUBE_VERSION_SHORT}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
     # This overwrites any existing configuration in /etc/apt/sources.list.d/kubernetes.list
-    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v'"${KUBE_VERSION_SHORT}"'/deb/ /' | \
-	    sudo tee /etc/apt/sources.list.d/kubernetes.list
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v'"${KUBE_VERSION_SHORT}"'/deb/ /' |
+      sudo tee /etc/apt/sources.list.d/kubernetes.list
 
     sudo apt-get update
     sudo apt-get install -y kubelet=${KUBE_VERSION_FULL} kubeadm=${KUBE_VERSION_FULL} kubectl=${KUBE_VERSION_FULL}
@@ -174,13 +171,13 @@ install-k8s() {
 
 # Install Helm3
 install-helm() {
-  CUR_VERSION=$(helm version --short 2> /dev/null)
+  CUR_VERSION=$(helm version --short 2>/dev/null)
 
   if [[ "${CUR_VERSION}" != *"3"* ]]; then
     cecho "GREEN" "Helm 3 is not installed. Proceeding to install Helm ..."
 
     # Install Helm prerequisites
-    curl -s https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+    curl -s https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg >/dev/null
     sudo apt-get install apt-transport-https --yes
 
     # Add Helm repository and install Helm
@@ -193,7 +190,6 @@ install-helm() {
   fi
 }
 
-
 #run-as-root
 install-packages
 disable-swap
@@ -202,4 +198,3 @@ setup-k8s-networking
 install-containerd
 install-k8s
 install-helm
-

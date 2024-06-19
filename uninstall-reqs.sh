@@ -8,14 +8,14 @@
 # Notes: This script is designed for use with Ubuntu 22.04.
 # ==============================================================================
 
-run-as-root(){
-  if [ "$EUID" -ne 0 ]
-  then cecho "RED" "This script must be run as ROOT"
-  exit
+run-as-root() {
+  if [ "$EUID" -ne 0 ]; then
+    cecho "RED" "This script must be run as ROOT"
+    exit
   fi
 }
 
-timer-sec(){
+timer-sec() {
   secs=$((${1}))
   while [ $secs -gt 0 ]; do
     echo -ne "Waiting for $secs\033[0K seconds ...\r"
@@ -25,19 +25,18 @@ timer-sec(){
 }
 
 # Based on https://stackoverflow.com/a/53463162/9346339
-cecho(){
-    RED="\033[0;31m"
-    GREEN="\033[0;32m"  # <-- [0 means not bold
-    YELLOW="\033[1;33m" # <-- [1 means bold
-    CYAN="\033[1;36m"
-    # ... Add more colors if you like
+cecho() {
+  RED="\033[0;31m"
+  GREEN="\033[0;32m"  # <-- [0 means not bold
+  YELLOW="\033[1;33m" # <-- [1 means bold
+  CYAN="\033[1;36m"
+  # ... Add more colors if you like
 
-    NC="\033[0m" # No Color
+  NC="\033[0m" # No Color
 
-    # printf "${(P)1}${2} ${NC}\n" # <-- zsh
-    printf "${!1}${2} ${NC}\n" # <-- bash
+  # printf "${(P)1}${2} ${NC}\n" # <-- zsh
+  printf "${!1}${2} ${NC}\n" # <-- bash
 }
-
 
 uninstall_docker() {
   cecho "RED" "Uninstalling docker ..."
@@ -65,12 +64,11 @@ uninstall_containerd() {
   fi
 }
 
-
 uninstall_k8s() {
   cecho "RED" "Uninstalling Kubernetes components (kubectl, kubeadm, kubelet)..."
   if [ -x "$(command -v kubectl)" ] && [ -x "$(command -v kubeadm)" ] && [ -x "$(command -v kubelet)" ]; then
     sudo apt-mark unhold kubelet kubeadm kubectl
-    sudo apt-get remove --purge -y --allow-change-held-packages kubelet kubeadm kubectl kubernetes-cni kube* 
+    sudo apt-get remove --purge -y --allow-change-held-packages kubelet kubeadm kubectl kubernetes-cni kube*
     cecho "GREEN" "Kubernetes components have been deleted."
   else
     cecho "YELLOW" "Kubernetes components (kubectl, kubeadm, kubelet) are not installed."
