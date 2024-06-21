@@ -109,8 +109,8 @@ setup-ovs-cni() {
     cecho "YELLOW" "OpenVSwitch is already installed."
   else
     cecho "GREEN" "Installing OpenVSwitch ..."
-    sudo apt-get update
-    sudo apt-get install openvswitch-switch
+    sudo apt update
+    sudo apt install openvswitch-switch
   fi
 
   cecho "GREEN" "Configuring bridges for use by ovs-cni ..."
@@ -138,4 +138,4 @@ create-k8s-cluster
 install-cni
 install-multus
 install-openebs
-#setup-ovs-cni
+setup-ovs-cni

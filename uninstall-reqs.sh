@@ -40,62 +40,36 @@ cecho() {
 
 uninstall_docker() {
   cecho "RED" "Uninstalling docker ..."
-  if [ -x "$(command -v docker)" ]; then
-    sudo apt-mark unhold docker-ce docker-ce-cli
-    sudo docker image prune -a
-    sudo docker system prune -a
-    sudo systemctl restart docker
-    sudo apt purge -y docker-engine docker docker.io docker-ce docker-ce-cli containerd containerd.io runc --allow-change-held-packages
-  else
-    cecho "YELLOW" "Docker is not installed."
-  fi
-}
-
-uninstall_containerd() {
-  cecho "RED" "Uninstalling containerd ..."
-  if [ -x "$(command -v containerd)" ]; then
-    sudo apt-mark unhold docker-ce docker-ce-cli
-    sudo systemctl stop containerd
-    sudo apt-get remove --purge -y containerd.io docker-ce docker-ce-cli --allow-change-held-packages
-    sudo rm -rf /etc/containerd
-    cecho "GREEN" "Containerd and related packages have been uninstalled."
-  else
-    cecho "YELLOW" "Containerd is not installed."
-  fi
+  sudo apt-mark unhold docker-ce docker-ce-cli
+  sudo docker image prune -a
+  sudo docker system prune -a
+  sudo apt purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
+  sudo rm -rf /etc/containerd /var/lib/docker /var/lib/containerd
+  cecho "GREEN" "Docker and related packages have been uninstalled."
 }
 
 uninstall_k8s() {
   cecho "RED" "Uninstalling Kubernetes components (kubectl, kubeadm, kubelet)..."
-  if [ -x "$(command -v kubectl)" ] && [ -x "$(command -v kubeadm)" ] && [ -x "$(command -v kubelet)" ]; then
-    sudo apt-mark unhold kubelet kubeadm kubectl
-    sudo apt-get remove --purge -y --allow-change-held-packages kubelet kubeadm kubectl kubernetes-cni kube*
-    cecho "GREEN" "Kubernetes components have been deleted."
-  else
-    cecho "YELLOW" "Kubernetes components (kubectl, kubeadm, kubelet) are not installed."
-  fi
-
+  sudo apt-mark unhold kubelet kubeadm kubectl
+  sudo apt purge -y kubelet kubeadm kubectl kubernetes-cni kube*
+  cecho "GREEN" "Kubernetes components have been deleted."
 }
 
 uninstall_helm() {
   cecho "RED" "Removing Helm3"
-  if [ -x "$(command -v helm)" ]; then
-    sudo apt-mark unhold helm
-    sudo apt-get remove --purge -y --allow-change-held-packages helm
-    cecho "GREEN" "Helm3 has been removed."
-  else
-    cecho "YELLOW" "Helm3 is not installed"
-  fi
+  sudo apt-mark unhold helm
+  sudo apt purge -y helm
+  cecho "GREEN" "Helm3 has been removed."
 }
 
 cleanup() {
   cecho "RED" "Cleaning up build directories and redundant packages ..."
   sudo rm -rf build
-  sudo apt-get -y autoremove
+  sudo apt autoremove -y
 }
 
 uninstall_helm
 uninstall_k8s
-uninstall_containerd
 uninstall_docker
 cleanup
 

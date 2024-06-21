@@ -47,7 +47,7 @@ reset_k8s_cluster() {
     cecho "YELLOW" "Kubernetes cluster is not running."
   fi
 
-  sudo rm -rf ${HOME}/.kube /etc/kubernetes /var/lib/kubelt /var/run/kubernetes
+  sudo rm -rf ${HOME}/.kube /etc/kubernetes /var/lib/kubelet /var/run/kubernetes
   sudo rm -rf /var/lib/etcd /var/lib/etcd2
   sudo rm -rf /var/lib/dockershim /var/lib/docker /etc/docker /var/run/docker.sock
   sudo rm -f /etc/apparmor.d/docker /etc/systemd/system/etcd*
@@ -68,7 +68,7 @@ uninstall_flannel() {
 uninstall_openebs() {
   cecho "RED" "Removing openebs ..."
   if kubectl get namespace | grep -q openebs; then
-    helm uninstall openebs --namespace openebs
+    helm uninstall openebs -n openebs
     kubectl delete ns openebs
   else
     cecho "YELLOW" "OpenEBS is not installed."
@@ -81,8 +81,7 @@ uninstall_openebs() {
 uninstall_multus() {
   cecho "RED" "Uninstalling multus ..."
   if kubectl get pods -n kube-system -l app=multus | grep -q '1/1'; then
-    cd build/multus-cni
-    cat ./deployments/multus-daemonset-thick.yml | kubectl delete -f -
+    kubectl delete -f build/multus-cni/deployments/multus-daemonset-thick.yml
     cecho "GREEN" "Uninstalled multus."
   else
     cecho "YELLOW" "Multus is not installed."
@@ -102,7 +101,7 @@ remove_ovs_cni() {
 
   if [ -x "$(command -v ovs-vsctl)" ]; then
     cecho "RED" "Removing OpenVSwitch"
-    sudo apt-get remove --purge -y openvswitch-switch
+    sudo apt purge -y openvswitch-switch
     cecho "GREEN" "OpenVSwitch has been removed."
   else
     cecho "YELLOW" "OpenVSwitch is not installed"
@@ -112,7 +111,7 @@ remove_ovs_cni() {
 cleanup() {
   cecho "RED" "Cleaning up build directories and redundant packages ..."
   sudo rm -rf build
-  sudo apt-get -y autoremove
+  sudo apt autoremove -y
 }
 
 remove_ovs_cni

@@ -49,12 +49,11 @@ timer-sec() {
 }
 
 install-packages() {
-  sudo apt-get update
-  sudo apt-get install -y vim tmux git curl iproute2 iputils-ping iperf3 tcpdump python3-pip
+  sudo apt update
+  sudo apt install -y vim tmux git curl ca-certificates apt-transport-https gpg net-tools iproute2 iputils-ping iperf3 tcpdump python3-pip
   sudo pip3 install virtualenv
 }
 
-# Disable Swap
 disable-swap() {
   cecho "GREEN" "Disabling swap ..."
   if [ -n "$(swapon -s)" ]; then
@@ -75,52 +74,43 @@ disable-firewall() {
   sudo ufw disable
 }
 
-# Install containerd as Kubernetes CRI
+# Install Docker as Kubernetes CRI
 # Based on https://docs.docker.com/engine/install/ubuntu/
-# Fixme: If containerd is not running with proper settings, it just checks if containerd is there and exits.
-install-containerd() {
-  if [ -x "$(command -v containerd)" ]; then
-    cecho "YELLOW" "Containerd is already installed."
+install-docker() {
+  if [ -x "$(command -v docker)" ]; then
+    cecho "YELLOW" "Docker is already installed."
   else
-    cecho "GREEN" "Installing containerd ..."
+    cecho "GREEN" "Installing Docker..."
+
+    # remove all the conflicting legacy packages
+    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt remove $pkg; done
+
     # Add Docker's official GPG key:
-    sudo apt-get update
-    sudo apt-get install -y ca-certificates curl gnupg
     sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
 
     # Add the repository to Apt sources:
     echo \
-      "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-            "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" |
-      sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-
-    # remove all the conflicting legacy packages
-    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
-
-    sudo apt-get update
-    sudo apt-get install -y \
-      docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io docker-buildx-plugin docker-compose-plugin
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+    sudo apt update
+    sudo apt install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io docker-buildx-plugin docker-compose-plugin
     sudo apt-mark hold docker-ce docker-ce-cli
-    sudo mkdir -p /etc/containerd
-    sudo bash -c 'containerd config default > /etc/containerd/config.toml'
-    sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+    sudo groupadd docker
+    sudo usermod -aG docker $USER
     sudo systemctl enable containerd
     sudo systemctl restart containerd
+    sudo systemctl enable docker
     sudo systemctl restart docker
+    sudo docker run hello-world
   fi
 
-  if ! getent group docker >/dev/null 2>&1; then
-    sudo groupadd docker
-  fi
-  sudo usermod -aG docker $USER
-
-  # Check if Containerd is running
-  if sudo systemctl is-active containerd &>/dev/null; then
-    cecho "GREEN" "Containerd is running :)"
+  # Check if Docker is running
+  if sudo systemctl is-active docker &>/dev/null; then
+    cecho "GREEN" "Docker is running :)"
   else
-    cecho "RED" "Containerd installation failed or is not running!"
+    cecho "RED" "Docker installation failed or is not running :("
   fi
 }
 
@@ -155,16 +145,14 @@ install-k8s() {
     cecho "YELLOW" "Kubernetes components (kubectl, kubeadm, kubelet) are already installed."
   else
     cecho "GREEN" "Installing Kubernetes components (kubectl, kubeadm, kubelet) ..."
-    sudo apt-get update
-    # apt-transport-https may be a dummy package; if so, you can skip that package
-    sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+    sudo apt update
     curl -fsSL https://pkgs.k8s.io/core:/stable:/v${KUBE_VERSION_SHORT}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
     # This overwrites any existing configuration in /etc/apt/sources.list.d/kubernetes.list
     echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v'"${KUBE_VERSION_SHORT}"'/deb/ /' |
       sudo tee /etc/apt/sources.list.d/kubernetes.list
 
-    sudo apt-get update
-    sudo apt-get install -y kubelet=${KUBE_VERSION_FULL} kubeadm=${KUBE_VERSION_FULL} kubectl=${KUBE_VERSION_FULL}
+    sudo apt update
+    sudo apt install -y kubelet=${KUBE_VERSION_FULL} kubeadm=${KUBE_VERSION_FULL} kubectl=${KUBE_VERSION_FULL}
     sudo apt-mark hold kubelet kubeadm kubectl
   fi
 }
@@ -178,12 +166,11 @@ install-helm() {
 
     # Install Helm prerequisites
     curl -s https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg >/dev/null
-    sudo apt-get install apt-transport-https --yes
 
     # Add Helm repository and install Helm
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-    sudo apt-get update
-    sudo apt-get install helm=${HELM_VERSION}
+    sudo apt update
+    sudo apt install helm=${HELM_VERSION}
     sudo apt-mark hold helm
   else
     cecho "YELLOW" "Helm 3 is already installed."
@@ -195,6 +182,6 @@ install-packages
 disable-swap
 disable-firewall
 setup-k8s-networking
-install-containerd
+install-docker
 install-k8s
 install-helm
