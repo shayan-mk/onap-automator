@@ -60,6 +60,9 @@ install-docker() {
     sudo apt update
     sudo apt install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io docker-buildx-plugin docker-compose-plugin
     sudo apt-mark hold docker-ce docker-ce-cli
+    sudo mkdir -p /etc/containerd
+    sudo bash -c 'containerd config default > /etc/containerd/config.toml'
+    sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
     sudo groupadd docker
     sudo usermod -aG docker $USER
     sudo systemctl enable --now containerd
@@ -73,13 +76,6 @@ install-docker() {
       cecho "RED" "Docker installation failed or is not running :("
     fi
   fi
-}
-
-setup-containerd() {
-  sudo mkdir -p /etc/containerd
-  sudo bash -c 'containerd config default > /etc/containerd/config.toml'
-  sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-  sudo systemctl restart containerd
 }
 
 setup-k8s-networking() {
@@ -132,7 +128,6 @@ run-as-root
 install-packages
 disable-swap
 disable-firewall
-setup-containerd
 setup-k8s-networking
 install-docker
 install-k8s

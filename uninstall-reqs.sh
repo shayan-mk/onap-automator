@@ -10,10 +10,10 @@
 
 cecho() {
   case "$1" in
-    "RED") color="\033[0;31m" ;;
-    "GREEN") color="\033[0;32m" ;;
-    "YELLOW") color="\033[0;33m" ;;
-    *) color="\033[0m" ;;  # No Color
+  "RED") color="\033[0;31m" ;;
+  "GREEN") color="\033[0;32m" ;;
+  "YELLOW") color="\033[0;33m" ;;
+  *) color="\033[0m" ;; # No Color
   esac
   echo -e "${color}$2\033[0m"
 }
