@@ -65,10 +65,18 @@ install-docker() {
     sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
     sudo groupadd docker
     sudo usermod -aG docker $USER
+    mkdir -p /etc/systemd/system/docker.service.d/
+    cat > /etc/systemd/system/docker.service.d/docker.conf << EOF
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H fd:// --insecure-registry=nexus3.onap.org:10001
+EOF
     sudo systemctl enable --now containerd
     sudo systemctl enable --now docker
+    systemctl daemon-reload
     sudo systemctl restart containerd
     sudo systemctl restart docker
+    docker login -u docker -p docker nexus3.onap.org:10001
     sudo docker run hello-world
     if sudo systemctl is-active docker &>/dev/null; then
       cecho "GREEN" "Docker is running :)"
