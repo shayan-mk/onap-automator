@@ -11,7 +11,6 @@ cd ~/onap-automator
 git fetch
 git reset --hard origin/main
 
-./destroy-cluster.sh
 ./uninstall-reqs.sh
 sudo apt autoremove -y
 sudo reboot

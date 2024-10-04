@@ -39,10 +39,10 @@ control)
     execute_script "control" 4
     ;;
 worker)
-    execute_script "k8s" 10
+    execute_script "k8s" 12
     ;;
 all)
     execute_script "control" 4
-    execute_script "k8s" 10
+    execute_script "k8s" 12
     ;;
 esac
