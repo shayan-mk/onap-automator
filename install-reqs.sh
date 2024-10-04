@@ -9,9 +9,9 @@
 # ==============================================================================
 
 DOCKER_VERSION="5:20.10.24~3-0~ubuntu-jammy"
-KUBE_VERSION_SHORT="1.27"
-KUBE_VERSION_FULL="1.27.5-1.1"
-HELM_VERSION="3.12.3-1"
+KUBE_VERSION_SHORT="1.28"
+KUBE_VERSION_FULL="1.28.6-1.1"
+HELM_VERSION="3.13.1-1"
 
 cecho() {
   case "$1" in
@@ -52,7 +52,7 @@ install-docker() {
     cecho "YELLOW" "Docker is already installed."
   else
     cecho "GREEN" "Installing Docker..."
-    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt remove -y $pkg; done
+    sudo apt purge -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc

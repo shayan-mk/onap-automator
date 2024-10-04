@@ -12,5 +12,5 @@ git fetch
 git reset --hard origin/main
 
 ./uninstall-reqs.sh
-sudo apt autoremove -y
+#sudo apt full-upgrade -y
 sudo reboot

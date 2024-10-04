@@ -11,7 +11,7 @@ cd ~/onap-automator
 git fetch
 git reset --hard origin/main
 
-sudo apt upgrade -y
-sudo apt autoremove -y
+#sudo apt upgrade -y
+#sudo apt autoremove -y
 ./install-reqs.sh
 sudo reboot

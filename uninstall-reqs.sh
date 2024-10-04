@@ -27,19 +27,26 @@ run-as-root() {
 
 uninstall_docker() {
   cecho "RED" "Uninstalling Docker and related components..."
-  sudo apt-mark unhold docker-ce docker-ce-cli
+  sudo apt-mark unhold docker*
   sudo docker image prune -a -f
   sudo docker system prune -a -f
-  sudo apt purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
-  sudo rm -rf /etc/docker /var/lib/docker /var/lib/containerd /etc/containerd
+  sudo apt purge -y docker* containerd* podman-docker runc
+  sudo rm -f /usr/bin/docker* /usr/bin/containerd* /usr/bin/runc
+  sudo rm -rf /etc/systemd/system/docker*
+  sudo systemctl daemon-reload
+  sudo rm -rf /etc/docker /var/lib/docker /var/lib/containerd /etc/containerd /var/run/docker
+  sudo rm -rf ~/.docker
   cecho "GREEN" "Docker and related packages have been uninstalled."
 }
 
+
 uninstall_k8s() {
   cecho "RED" "Uninstalling Kubernetes components..."
-  sudo apt-mark unhold kubelet kubeadm kubectl
-  sudo apt purge -y kubelet kubeadm kubectl kubernetes-cni kube*
+  sudo apt-mark unhold kube*
+  sudo apt purge -y kubelet kube*
+  sudo rm -f /usr/local/bin/kube*
   sudo rm -rf /etc/kubernetes /var/lib/kubelet /var/lib/etcd /var/run/kubernetes
+  sudo rm -rf ~/.kube
   cecho "GREEN" "Kubernetes components have been uninstalled."
 }
 
@@ -47,14 +54,15 @@ uninstall_helm() {
   cecho "RED" "Removing Helm..."
   sudo apt-mark unhold helm
   sudo apt purge -y helm
+  sudo rm -f /usr/local/bin/helm
+  sudo rm -rf .local/share/helm .cache/helm
   cecho "GREEN" "Helm has been removed."
 }
 
 cleanup() {
   cecho "RED" "Performing final cleanup..."
-  sudo rm -rf build
   sudo apt autoremove -y
-  sudo apt clean
+  sudo apt autoclean
   cecho "GREEN" "Cleanup complete."
 }
 
