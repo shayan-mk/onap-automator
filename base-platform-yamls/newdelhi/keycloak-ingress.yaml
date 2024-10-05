@@ -7,24 +7,25 @@ metadata:
   namespace: keycloak
 spec:
   hostnames:
-  - keycloak-ui.simpledemo.onap.org
+    - keycloak-ui.simpledemo.onap.org
   parentRefs:
-  - group: gateway.networking.k8s.io
-    kind: Gateway
-    name: common-gateway
-    namespace: istio-ingress
-    sectionName: https-80
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: common-gateway
+      namespace: istio-ingress
+      sectionName: https-80
   rules:
-    Filters:
-      Request Redirect:
-        Port:         443
-        Scheme:       https
-        Status Code:  301
-      Type:           RequestRedirect
-    Matches:
-      Path:
-        Type:   PathPrefix
-        Value:  /auth
+    - matches:  # Ensure this is a list
+        - path:
+            type: PathPrefix
+            value: /auth
+      filters:
+        - type: RequestRedirect
+          requestRedirect:  # Correctly nested under filters
+            port: 443
+            scheme: https
+            statusCode: 301
+
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
