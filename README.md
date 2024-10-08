@@ -22,6 +22,8 @@ This repository contains a set of Bash scripts designed to automate the deployme
 
 - **`undeploy-all.sh`**: Undeploys all the ONAP components that have been deployed using the `deploy-basics.sh` or `sub-deploy.sh` scripts.
 
+- **`helm-plugins/`**: Customized version of ONAP's `deploy` and `undeploy` plugins enabling dry-run and component-specific deployment. You can install using `helm install plugin helm-plugins/deploy`. This plugins are prerequisites to the other ONAP deployment scripts above.
+
 - **`base-platform-yamls/`**: This directory contains yaml configs for the ONAP Base Platform, versions **Montreal** and **New Delhi**
 
 - **`archive/`**: Legacy scripts for k8s cluster creation, which are now replaced with RKE `cluster.yml` config. ( Special thanks to Niloy Saha for the legacy scripts :D )
