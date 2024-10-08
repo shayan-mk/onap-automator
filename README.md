@@ -1,24 +1,27 @@
-# testbed-automator
-`install.sh` : automates the deployment of a single-node k8s cluster, configures cluster, installs various CNIs, configures ovs bridges and sets everything up for deployment of 5G core.
+# ONAP Automator
 
-`uninstall.sh`: reverses install.sh
+## Overview
+This repository contains a set of Bash scripts designed to automate the deployment and management of ONAP (Open Network Automation Platform) for 5G slicing on a Kubernetes environment. The scripts handle tasks such as setting up a VM, deploying ONAP components, managing dependencies, and cleaning up the environment.
 
-# troubleshooting
+## Repository Structure
+- **`setup-vm.sh`**: Prepares the virtual machine environment by installing necessary tools and configuring env and network for ONAP deployment.
 
-## kudeadm init hangs
+- **`cleanup-vm.sh`**: Cleans up the virtual machine by removing ONAP-related configurations, containers, and temporary files, restoring the VM to its original state.
 
-Check kubelet status
-```bash
-sudo systemctl status --no-pager --full kubelet.service
-```
+- **`install-reqs.sh`**: Installs the necessary dependencies and tools required for running ONAP, such as Docker, Helm, and Kubernetes with a specific version.
 
-If you get error like the following:
+- **`uninstall-reqs.sh`**: Removes previously installed dependencies, cleaning up the environment after the deployment is done.
 
-> OCI runtime create failed: expected cgroupsPath to be of format \"slice:prefix:name\" for systemd cgroups, got \"/kubepods/burstable/..."
+- **`run-all.sh`**: This script runs other scripts on all VM nodes :)  For example `./run-all.sh control setup-vm.s` will run `setup-vm.sh` only on control nodes.
 
-Then remove the containerd configuration and restart containerd.
+- **`deploy-basics.sh`**: Initializes the deployment of basic ONAP components. This script handles setting up essential services needed for ONAP deployment (a.k.a Base Platform).
 
-```
-sudo rm /etc/containerd/config.toml
-systemctl restart containerd
-```
+- **`sub-deploy.sh`**: Deploys specific ONAP components individually. Useful if only certain ONAP features need to be deployed at any given time.
+
+- **`sub-undeploy.sh`**: Uninstalls specific ONAP components. This allows you to remove particular components while keeping others intact.
+
+- **`undeploy-all.sh`**: Undeploys all the ONAP components that have been deployed using the `deploy-basics.sh` or `sub-deploy.sh` scripts.
+
+- **`base-platform-yamls/`**: This directory contains yaml configs for the ONAP Base Platform, versions **Montreal** and **New Delhi**
+
+- **`archive/`**: Legacy scripts for k8s cluster creation, which are now replaced with RKE `cluster.yml` config. ( Special thanks to Niloy Saha for the legacy scripts :D )
