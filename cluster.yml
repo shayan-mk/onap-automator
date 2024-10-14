@@ -129,6 +129,8 @@ services:
     cluster_domain: cluster.local
     cluster_dns_server: 10.43.0.10
     fail_swap_on: false
+    extra_binds:
+    - "/var/openebs:/var/openebs"
 network:
   plugin: canal
 authentication:
@@ -138,7 +140,7 @@ ssh_agent_auth: false
 authorization:
   mode: rbac
 ignore_docker_version: false
-kubernetes_version: "v1.28.7-rancher1-1"
+kubernetes_version: "v1.27.6-rancher1-1"
 private_registries:
 - url: nexus3.onap.org:10001
   user: docker

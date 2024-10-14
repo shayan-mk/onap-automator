@@ -9,9 +9,9 @@
 # ==============================================================================
 
 DOCKER_VERSION="5:20.10.24~3-0~ubuntu-jammy"
-KUBE_VERSION_SHORT="1.28"
-KUBE_VERSION_FULL="1.28.6-1.1"
-HELM_VERSION="3.13.1-1"
+KUBE_VERSION_SHORT="1.27"
+KUBE_VERSION_FULL="1.27.6-1.1"
+HELM_VERSION="3.12.3-1"
 
 cecho() {
   case "$1" in
@@ -134,9 +134,9 @@ install-helm() {
 # Run installation steps
 run-as-root
 install-packages
-disable-swap
-disable-firewall
-setup-k8s-networking
-install-docker
+#disable-swap
+#disable-firewall
+#setup-k8s-networking
+#install-docker
 install-k8s
 install-helm
