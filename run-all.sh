@@ -30,7 +30,7 @@ execute_script() {
         scp "$SCRIPT_PATH" "${server}:~/"
 
         echo "Executing script on $server"
-        ssh -t "$server" "sudo bash ~/$(basename "$SCRIPT_PATH")"
+        ssh -t "$server" "bash ~/$(basename "$SCRIPT_PATH")"
     done
 }
 

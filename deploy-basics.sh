@@ -14,7 +14,6 @@ if [[ ! -d "oom" ]]; then
 fi
 
 cd ~/oom/kubernetes/onap/resources/overrides/
-git reset --hard origin/master
 helm deploy onap onap-release/onap --namespace onap --create-namespace --set global.masterPassword=$PASSWORD --version $VERSION -f onap-all.yaml -f environment.yaml  > ~/onap-commands.log
 
 cd ~/onap-automator/

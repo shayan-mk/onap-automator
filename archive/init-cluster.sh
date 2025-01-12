@@ -119,8 +119,8 @@ setup-ovs-cni() {
 run-as-root
 
 # Execute cluster creation and component installations
-create-k8s-cluster
-install-cni
-install-multus
-install-openebs
+#create-k8s-cluster
+#install-cni
+#install-multus
+#install-openebs
 setup-ovs-cni

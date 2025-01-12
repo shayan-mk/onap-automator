@@ -18,4 +18,4 @@ defaults:
   pilot:
     env:
       PILOT_HTTP10: true
-      ENABLE_NATIVE_SIDECARS: true
+      #ENABLE_NATIVE_SIDECARS: true

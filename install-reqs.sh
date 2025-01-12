@@ -137,6 +137,6 @@ install-packages
 #disable-swap
 #disable-firewall
 #setup-k8s-networking
-#install-docker
-install-k8s
-install-helm
+install-docker
+#install-k8s
+#install-helm
